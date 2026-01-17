@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # This is the 'Security Guard'
 from engine import run_linux_command
+from watcher import get_system_vitals
 
 # 2. INITIALIZATION: Creating the actual application object
 app = FastAPI()
@@ -31,3 +32,12 @@ def execute_command(command: str):
     # In the next step, we will make this run real Linux commands!
     result = run_linux_command(command) 
     return{"response": result}
+
+@app.get("/cmd/{user_input}")
+def read_item(user_input: str):
+    return {"output": run_linux_command(user_input)}
+
+# When frontend asks for /vitals return the hardware stats
+@app.get("/vitals")
+def read_vitals():
+    return get_system_vitals()

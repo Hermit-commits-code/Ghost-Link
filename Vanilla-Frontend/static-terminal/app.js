@@ -1,5 +1,8 @@
 const termInput = document.getElementById("terminal-input");
 const termBody = document.getElementById("terminal-body");
+const cpuElement = document.getElementById("cpu-load");
+const ramElement = document.getElementById("ram-usage");
+const uptimeElement = document.getElementById("sys-uptime");
 
 termInput.addEventListener("keydown", async (event) => {
   if (event.key === "Enter") {
@@ -39,3 +42,15 @@ async function sendToPython(userText) {
   // now your having the old function we created print this data out?
   outputLine(data.response);
 }
+
+async function updateVitals() {
+  const response = await fetch("http://127.0.0.1:8000/vitals");
+
+  const data = await response.json();
+
+  cpuElement.innerText = data.cpu;
+  ramElement.innerText = data.ram;
+  uptimeElement.innerText = data.uptime;
+}
+
+setInterval(updateVitals, 2000);
