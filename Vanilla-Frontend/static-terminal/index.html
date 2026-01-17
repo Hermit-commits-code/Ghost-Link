@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ghost-Link | Terminal</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="terminal-window">
+      <header class="terminal-header">
+        <div class="controls">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="window-title">joe@noir: ~/GhostLink</div>
+      </header>
+      <section id="terminal-body">
+        <p class="line">Ghost-Link OS [Version 1.0.0]</p>
+        <p class="line">Identity Verified: Joseph Chu</p>
+        <br />
+        <p class="line">Waiting for Input...</p>
+      </section>
+      <footer class="terminal-prompt">
+        <span class="symbol">&#955;</span
+        ><input type="text" id="terminal-input" />
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
