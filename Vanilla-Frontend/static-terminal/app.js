@@ -4,15 +4,32 @@ const cpuElement = document.getElementById("cpu-load");
 const ramElement = document.getElementById("ram-usage");
 const uptimeElement = document.getElementById("sys-uptime");
 
+const OLD_COMMANDS = [];
+let Num = 0;
+
 termInput.addEventListener("keydown", async (event) => {
   if (event.key === "Enter") {
     // Extraction takin the text the user typed and stored it in a variable
     const commandText = termInput.value;
 
+    OLD_COMMANDS.push(commandText);
+
     sendToPython(commandText);
 
     // Cleanup. Emptying the input box so its ready for the next command.
     termInput.value = "";
+
+    Num = OLD_COMMANDS.length;
+  } else if (event.key === "ArrowUp") {
+    if (Num > 0) {
+      Num--; /*Num = Num - 1;*/
+      termInput.value = OLD_COMMANDS[Num];
+    }
+  } else if (event.key === "ArrowDown") {
+    if (Num < OLD_COMMANDS.length) {
+      Num++;
+      termInput.value = OLD_COMMANDS[Num] || "";
+    }
   }
 });
 
