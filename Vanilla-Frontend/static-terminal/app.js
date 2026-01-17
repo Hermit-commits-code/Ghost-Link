@@ -16,6 +16,10 @@ termInput.addEventListener("keydown", async (event) => {
   }
 });
 
+document.getElementById("terminal-window").addEventListener("click", () => {
+  termInput.focus();
+});
+
 function outputLine(text) {
   // Create a new empty paragraph element in the computer's memory
   const newLine = document.createElement("p");
