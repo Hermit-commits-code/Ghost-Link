@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GHOST-LINK // CORE</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="terminal-window">
+      <div class="terminal-header">
+        <div class="header-left">
+          <span class="dot red"></span> <span class="dot yellow"></span>
+          <span class="dot green"></span> <span class="symbol">//</span>
+          <span class="title">GHOST-LINK-CORE v1.0.0</span>
+        </div>
+        <div class="system-stats">
+          <div class="stat-item">CPU: <span id="cpu-load">0.0%</span></div>
+          <div class="stat-item">RAM: <span id="ram-usage">0.0%</span></div>
+          <div class="stat-item">UPTIME: <span id="sys-uptime">0s</span></div>
+        </div>
+      </div>
+
+      <div id="terminal-body">
+        <p class="line">Ghost-Link Engine Initialized...</p>
+        <p class="line">Type 'edit [filename]' to access the filesystem.</p>
+      </div>
+
+      <div class="terminal-prompt">
+        <span class="symbol">arch@hermit-forge:~$</span>
+        <input type="text" id="terminal-input" autofocus autocomplete="off" />
+      </div>
+    </div>
+
+    <div id="editor-container">
+      <div id="editor-sidebar">
+        <div class="sidebar-header">EXPLORER</div>
+        <div class="file-list">
+          <div class="file-item active" id="editor-filename">index.html</div>
+        </div>
+      </div>
+
+      <div id="editor-main">
+        <div id="editor-header">
+          <span class="status-indicator">MODIFIED</span>
+          <div class="editor-actions">
+            <button onclick="saveFile()">SAVE (CTRL+S)</button>
+            <button
+              onclick="
+                document.getElementById('editor-container').style.display =
+                  'none'
+              "
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+        <textarea id="editor-textarea" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <script src="dist/app.js"></script>
+  </body>
+</html>

@@ -1,19 +1,11 @@
-# 1. Python artifacts: We don't want the compiled "speed-up" files
-__pycache__/
-*.py[cod]
+# Rust Build Artifacts
+/target/
+**/*.rs.bk
 
-# 2. Virtual Environments: These are huge and specific to your Arch setup
-venv/
-.venv/
-env/
-
-# 3. Environment/Tooling: Specific to your mise/local setup
-.python-version
+# Node / Frontend
+node_modules/
 .env
 
-# 4. OS Specific: Prevents Arch/Linux meta-data from uploading
+# System / OS
 .DS_Store
-.directory
-
-# 5. IDE Specific: Prevents your personal VSCode settings from uploading
-.vscode/
+*.log
