@@ -1,87 +1,25 @@
 "use strict";
 // --- GHOST-LINK FRONTEND ENGINE (TS VERSION) ---
-// [2026-01-18] Fix: Added DOMContentLoaded wrapper and null-checks.
-// Wrap everything in an initializer to prevent "null" errors during load
+// [2026-01-18] Full Feature Set: Vitals, File I/O, Touch, RM.
 document.addEventListener("DOMContentLoaded", () => {
-    // Select DOM Elements with explicit Type Casting
+    // DOM Selection
     const termInput = document.getElementById("terminal-input");
     const termBody = document.getElementById("terminal-body");
     const editor = document.getElementById("editor-container");
     const textArea = document.getElementById("editor-textarea");
     const fileNameDisplay = document.getElementById("editor-filename");
-    /**
-     * FETCH VITALS: Requests hardware data from Rust
-     */
-    async function fetchVitals() {
-        try {
-            const response = await fetch("http://127.0.0.1:8000/vitals");
-            const data = await response.json();
-            // Use Optional Chaining (?.) or Non-null Assertion (!) to satisfy TS
-            if (document.getElementById("cpu-load")) {
-                document.getElementById("cpu-load").innerText = data.cpu;
-                document.getElementById("ram-usage").innerText = data.ram;
-                document.getElementById("sys-uptime").innerText = data.uptime;
-            }
-        }
-        catch (err) {
-            console.warn("Ghost-Link Backend Offline");
-        }
-    }
-    /**
-     * OPEN FILE: Requests file content from Rust /read/:filename
-     */
-    async function openFile(name) {
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/read/${name}`);
-            const content = await response.text();
-            fileNameDisplay.innerText = `Editing: ${name}`;
-            textArea.value = content;
-            editor.style.display = "flex"; // Triggers CSS Overlay
-            textArea.focus();
-        }
-        catch (err) {
-            logToTerminal(`Failed to open: ${name}`);
-        }
-    }
-    /**
-     * SAVE FILE: Sends content to Rust /save/:filename
-     */
-    async function saveFile() {
-        const name = fileNameDisplay.innerText.replace("Editing: ", "");
-        const body = textArea.value;
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/save/${name}`, {
-                method: "POST",
-                body: body,
-            });
-            const result = await response.text();
-            if (result === "Success")
-                logToTerminal(`Disk Write: ${name} [OK]`);
-        }
-        catch (err) {
-            logToTerminal("Disk Write Error");
-        }
-    }
-    function logToTerminal(msg) {
-        const line = document.createElement("p");
-        line.className = "line";
-        line.innerText = `[SYS] ${msg}`;
-        termBody.appendChild(line);
-        termBody.scrollTop = termBody.scrollHeight;
-    }
+    // --- REFRESH LOGIC ---
     async function refreshFiles() {
         try {
             const response = await fetch("http://127.0.0.1:8000/files");
             const files = await response.json();
             const fileListContainer = document.querySelector(".file-list");
-            fileListContainer.innerHTML = ""; // Clear existing list
+            fileListContainer.innerHTML = "";
             files.forEach((fileName) => {
                 const div = document.createElement("div");
                 div.className = "file-item";
                 div.innerText = fileName;
-                // Click to open file logic
                 div.onclick = () => {
-                    // Remove 'active' class from others, add to this one
                     document
                         .querySelectorAll(".file-item")
                         .forEach((el) => el.classList.remove("active"));
@@ -92,41 +30,105 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
         catch (err) {
-            console.error("Failed to fetch file list");
+            console.error("File list sync failed");
         }
     }
-    // Trigger initial scan when page loads
-    refreshFiles();
-    // Command Listener
-    termInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            const val = termInput.value.trim();
-            const [cmd, arg] = val.split(" ");
-            if (cmd === "edit") {
-                openFile(arg || "index.html");
-            }
-            else if (cmd === "clear") {
-                termBody.innerHTML = "";
+    // --- CORE FILE ACTIONS ---
+    async function openFile(name) {
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/read/${name}`);
+            textArea.value = await response.text();
+            fileNameDisplay.innerText = `Editing: ${name}`;
+            editor.style.display = "flex"; // Reveals sidebar + editor
+            textArea.focus();
+        }
+        catch (err) {
+            logToTerminal(`Read Error: ${name}`);
+        }
+    }
+    async function saveFile() {
+        const name = fileNameDisplay.innerText.replace("Editing: ", "");
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/save/${name}`, {
+                method: "POST",
+                body: textArea.value,
+            });
+            if ((await response.text()) === "Success")
+                logToTerminal(`Saved: ${name}`);
+        }
+        catch (err) {
+            logToTerminal("Save Error");
+        }
+    }
+    async function createFile(name) {
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/create/${name}`, {
+                method: "POST",
+            });
+            const res = await response.text();
+            if (res === "Success") {
+                logToTerminal(`Created: ${name}`);
+                refreshFiles();
             }
             else {
-                logToTerminal(`Unknown command: ${cmd}`);
+                logToTerminal(res);
             }
+        }
+        catch (err) {
+            logToTerminal("Creation Error");
+        }
+    }
+    async function deleteFile(name) {
+        if (!confirm(`Delete ${name}?`))
+            return;
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/delete/${name}`, {
+                method: "POST",
+            });
+            if ((await response.text()) === "Success") {
+                logToTerminal(`Removed: ${name}`);
+                refreshFiles();
+                if (fileNameDisplay.innerText.includes(name))
+                    editor.style.display = "none";
+            }
+        }
+        catch (err) {
+            logToTerminal("Deletion Error");
+        }
+    }
+    // --- TERMINAL LOGIC ---
+    function logToTerminal(msg) {
+        const p = document.createElement("p");
+        p.className = "line";
+        p.innerText = `[SYS] ${msg}`;
+        termBody.appendChild(p);
+        termBody.scrollTop = termBody.scrollHeight;
+    }
+    termInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const [cmd, arg] = termInput.value.trim().split(" ");
+            if (cmd === "edit")
+                openFile(arg || "index.html");
+            else if (cmd === "touch")
+                createFile(arg);
+            else if (cmd === "rm")
+                deleteFile(arg);
+            else if (cmd === "clear")
+                termBody.innerHTML = "";
+            else
+                logToTerminal(`Unknown: ${cmd}`);
             termInput.value = "";
         }
     });
-    // Global Shortcut Listener
-    window.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "s") {
-            e.preventDefault();
-            saveFile();
-        }
-        if (e.key === "Escape") {
-            editor.style.display = "none";
-            termInput.focus();
-        }
-    });
-    // Expose saveFile to the window so the HTML 'onclick' can see it
+    // Vitals Loop
+    setInterval(async () => {
+        const res = await fetch("http://127.0.0.1:8000/vitals");
+        const data = await res.json();
+        document.getElementById("cpu-load").innerText = data.cpu;
+        document.getElementById("ram-usage").innerText = data.ram;
+        document.getElementById("sys-uptime").innerText = data.uptime;
+    }, 2000);
+    // Initial Load
+    refreshFiles();
     window.saveFile = saveFile;
-    // Start Loops
-    setInterval(fetchVitals, 2000);
 });

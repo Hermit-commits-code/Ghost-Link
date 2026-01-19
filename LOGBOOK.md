@@ -64,3 +64,22 @@ _End of Entry - GHOST_SYS_01_
 ---
 
 _End of Entry - GHOST_SYS_02_
+
+## [2026-01-18] - PROTOCOL: FILESYSTEM MANIPULATION
+
+**Status:** OPERATIONAL
+
+### 1. NEW COMMANDS
+
+- `touch [filename]`: Creates an empty file in `src/static`.
+- `rm [filename]`: Removes a file with a browser confirmation safety check.
+- `edit`: Defaults to `index.html` if no argument is provided.
+
+### 2. ARCHITECTURAL FIXES
+
+- **Port Management:** Identified `AddrInUse` (Os 98) error and documented `fuser` recovery.
+- **UI Sync:** Integrated `refreshFiles()` into the creation and deletion loops to ensure the sidebar stays current.
+
+### 3. SAFETY
+
+- Implemented Rust-level protection against deleting `index.html`, `style.css`, and `app.js`.

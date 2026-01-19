@@ -1,5 +1,5 @@
 // --- GHOST-LINK CORE: RUST SYSTEMS ENGINE ---
-// [2026-01-16] Unified Engine: Serves API and Static Assets.
+// [2026-01-18] Updated: Added Create and Delete protocols.
 use axum::{
     extract::Path,
     routing::{get, post},
@@ -14,74 +14,45 @@ use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
-    // 1. Build the Router with Industrial Precision
+    // Initialize the Router with all Industrial Routes
     let app = Router::new()
-        // API Endpoints: Logic for the bridge
         .route("/vitals", get(get_vitals))
         .route("/files", get(list_files))
         .route("/read/:filename", get(read_file))
         .route("/save/:filename", post(save_file))
-        
-        // Static File Service: Replaces the Python server
-        // This serves everything in src/static (HTML, CSS, and the /dist folder)
+        .route("/create/:filename", post(create_file))
+        .route("/delete/:filename", post(delete_file))
+        // Serve the static frontend folder
         .fallback_service(ServeDir::new("src/static"))
-        
-        // Middleware: Allow browser-to-binary communication
         .layer(CorsLayer::permissive());
 
-    // 2. Configure the Ignition Address
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
     println!("GHOST-LINK CORE: Engine Ignition at http://{}", addr);
 
-    // 3. Start the persistent async loop
+    // This is where the panic happens if the port is busy
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
-// HANDLER: System Hardware Stats
-// Pulls real-time data from the Arch Linux kernel.
+// --- HANDLERS ---
+
 async fn get_vitals() -> Json<Value> {
     let mut sys = System::new_all();
     sys.refresh_all();
-    
-    let cpu = sys.global_cpu_usage();
-    let ram_pct = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
-    
     Json(json!({
-        "cpu": format!("{:.1}%", cpu),
-        "ram": format!("{:.1}%", ram_pct),
+        "cpu": format!("{:.1}%", sys.global_cpu_usage()),
+        "ram": format!("{:.1}%", (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0),
         "uptime": format!("{}s", System::uptime())
     }))
 }
 
-// HANDLER: Read File from Disk
-// Accesses the source files inside the static directory.
-async fn read_file(Path(filename): Path<String>) -> String {
-    let path = format!("src/static/{}", filename);
-    fs::read_to_string(&path).unwrap_or_else(|_| format!("Error: {} not found", path))
-}
-
-// HANDLER: Save File to Disk
-// Writes code updates back to the static directory.
-async fn save_file(Path(filename): Path<String>, body: String) -> String {
-    let path = format!("src/static/{}", filename);
-    match fs::write(&path, body) {
-        Ok(_) => "Success".to_string(),
-        Err(e) => format!("Error: {}", e),
-    }
-}
-
-// --- [Add the Handler Function at the bottom] ---
 async fn list_files() -> Json<Value> {
-    // Read the 'src/static' directory
     let paths = fs::read_dir("src/static").unwrap();
     let mut files = Vec::new();
-
     for path in paths {
         if let Ok(entry) = path {
-            // Get the filename as a string
             if let Ok(name) = entry.file_name().into_string() {
-                // Ignore the 'dist' folder and hidden files
+                // Filter out the compiled folder and hidden files
                 if name != "dist" && !name.starts_with('.') {
                     files.push(name);
                 }
@@ -89,4 +60,39 @@ async fn list_files() -> Json<Value> {
         }
     }
     Json(json!(files))
+}
+
+async fn read_file(Path(filename): Path<String>) -> String {
+    fs::read_to_string(format!("src/static/{}", filename))
+        .unwrap_or_else(|_| "Error: File not found".to_string())
+}
+
+async fn save_file(Path(filename): Path<String>, body: String) -> String {
+    match fs::write(format!("src/static/{}", filename), body) {
+        Ok(_) => "Success".to_string(),
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
+async fn create_file(Path(filename): Path<String>) -> String {
+    let path = format!("src/static/{}", filename);
+    if std::path::Path::new(&path).exists() {
+        return "Error: File already exists".to_string();
+    }
+    match fs::write(&path, "") {
+        Ok(_) => "Success".to_string(),
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
+async fn delete_file(Path(filename): Path<String>) -> String {
+    let path = format!("src/static/{}", filename);
+    // Safety check for core files
+    if filename == "index.html" || filename == "style.css" || filename == "app.js" {
+        return "Error: Cannot delete core system files".to_string();
+    }
+    match fs::remove_file(&path) {
+        Ok(_) => "Success".to_string(),
+        Err(e) => format!("Error: {}", e),
+    }
 }
