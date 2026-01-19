@@ -18,6 +18,7 @@ async fn main() {
     let app = Router::new()
         // API Endpoints: Logic for the bridge
         .route("/vitals", get(get_vitals))
+        .route("/files", get(list_files))
         .route("/read/:filename", get(read_file))
         .route("/save/:filename", post(save_file))
         
@@ -68,4 +69,24 @@ async fn save_file(Path(filename): Path<String>, body: String) -> String {
         Ok(_) => "Success".to_string(),
         Err(e) => format!("Error: {}", e),
     }
+}
+
+// --- [Add the Handler Function at the bottom] ---
+async fn list_files() -> Json<Value> {
+    // Read the 'src/static' directory
+    let paths = fs::read_dir("src/static").unwrap();
+    let mut files = Vec::new();
+
+    for path in paths {
+        if let Ok(entry) = path {
+            // Get the filename as a string
+            if let Ok(name) = entry.file_name().into_string() {
+                // Ignore the 'dist' folder and hidden files
+                if name != "dist" && !name.starts_with('.') {
+                    files.push(name);
+                }
+            }
+        }
+    }
+    Json(json!(files))
 }

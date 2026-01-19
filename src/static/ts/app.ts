@@ -85,6 +85,41 @@ document.addEventListener("DOMContentLoaded", () => {
     termBody.scrollTop = termBody.scrollHeight;
   }
 
+  async function refreshFiles(): Promise<void> {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/files");
+      const files: string[] = await response.json();
+
+      const fileListContainer = document.querySelector(
+        ".file-list",
+      ) as HTMLElement;
+      fileListContainer.innerHTML = ""; // Clear existing list
+
+      files.forEach((fileName) => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerText = fileName;
+
+        // Click to open file logic
+        div.onclick = () => {
+          // Remove 'active' class from others, add to this one
+          document
+            .querySelectorAll(".file-item")
+            .forEach((el) => el.classList.remove("active"));
+          div.classList.add("active");
+          openFile(fileName);
+        };
+
+        fileListContainer.appendChild(div);
+      });
+    } catch (err) {
+      console.error("Failed to fetch file list");
+    }
+  }
+
+  // Trigger initial scan when page loads
+  refreshFiles();
+
   // Command Listener
   termInput.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key === "Enter") {

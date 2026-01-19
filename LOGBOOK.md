@@ -38,3 +38,29 @@
 ---
 
 _End of Entry - GHOST_SYS_01_
+
+## [2026-01-18] - PROTOCOL: DYNAMIC UI EXPANSION
+
+**Status:** STABLE
+
+### 1. FEATURES IMPLEMENTED
+
+- **Sidebar File Browser:** Rust backend now scans `src/static` and returns a JSON list.
+- **Dynamic DOM Injection:** TypeScript now builds the sidebar UI at runtime.
+- **Active State Tracking:** Sidebar items now visually reflect the currently edited file via CSS `.active` class.
+
+### 2. SUBSYSTEM UPDATES
+
+- **Rust `main.rs`:** Added `/files` route with `std::fs::read_dir` logic.
+- **TS `app.ts`:** Integrated `refreshFiles()` and attached `saveFile` to the global scope.
+- **CSS `style.css`:** Added transitions and hover effects for the sidebar navigation.
+
+### 3. VERIFICATION
+
+- [x] Clicking sidebar item loads file into editor.
+- [x] Terminal 'edit' command remains functional.
+- [x] 'dist' folder is correctly filtered from the file list.
+
+---
+
+_End of Entry - GHOST_SYS_02_
